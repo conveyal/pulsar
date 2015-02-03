@@ -12,27 +12,33 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r echo=FALSE}
 # load data
 setwd('~/conveyal/trimet-scenario-modeling/')
-data <- read.csv('88_0_before.csv')
 
-# reverse the data so the plots are right
-data <- data[nrow(data):1]
-
+# make the plots
+mkplot <- function(filename, name) {
+  data <- read.csv(filename)
+  
+  data <- data[nrow(data):1,]
+  
+  stats <- list(
+    stats=matrix(c(data$min, data$percentile_25, data$median, data$percentile_75, data$max)/60, 5, nrow(data), byrow=T),
+    n=rep(0, nrow(data)),
+    conf=c(),
+    out=c(),
+    names=paste(data$route_id, "to", data$destination, "at", data$at, ":", data$count),
+    groups=c()
+  )
+  
+  mai <- par()$mai
+  mai[2] <- 9.5
+  par(las=2, mai=mai)
+  bxp(stats, main=name, horizontal=T, xlab="minutes")
+}
 ```
 
 ```{r}
-# make the plots
+mkplot('62_0_before.csv', 'Transfer times from from route 62 towards Washington Square TC, before, 7am to 9am')
+```
 
-stats <- list(
-  stats=matrix(c(data$min, data$percentile_25, data$median, data$percentile_75, data$max)/60, 5, nrow(data), byrow=T),
-  n=rep(0, nrow(data)),
-  conf=c(),
-  out=c(),
-  names=paste(data$route_id, "to", data$destination, "at", data$at),
-  groups=c()
-)
-
-mai <- par()$mai
-mai[2] <- 8
-par(las=2, mai=mai)
-bxp(stats, main="Transfer times from route 88 towards Beaverton TC", horizontal=T, xlab="minutes")
+```{r}
+mkplot('88_0_after.csv', 'Transfer times from from route 88 towards Willow Creek TC, after', lim=c(0,90))
 ```
