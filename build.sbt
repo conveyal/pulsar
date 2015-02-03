@@ -10,5 +10,9 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaEbean,
   cache,
-  javaWs
+  javaWs,
+  "org.opentripplanner" % "otp" % "0.13.0",
+  "org.mapdb" % "mapdb" % "1.0.6
 )
+
+resolvers += "Conveyal Maven Repository" at "http://maven.conveyal.com"
