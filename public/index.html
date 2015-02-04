@@ -59,6 +59,11 @@
       });
 
       d3.json('routes/baseline', function (err, data) {
+        // sort by route ID
+        data.sort(function (r1, r2) {
+          return r1.route_id - r2.route_id;
+        });
+
         // populate the select
         d3.select('#routeId')
         .selectAll('option')
