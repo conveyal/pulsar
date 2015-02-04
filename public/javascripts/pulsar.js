@@ -33,15 +33,14 @@ window.Pulsar.prototype = {
     // draw the new plot
     // figure the spacing
     // we use data.length not data.length - 1 so that we have room for everything
-    // 0.3 is a fudge factor so that below-baseline letters (like g) aren't cut off at the bottom
     var yscale = d3.scale.linear()
-      .range([0, this.height])
-      .domain([0, this.data.length + 0.3]);
+      .range([0, this.height - 55])
+      .domain([0, this.data.length]);
 
     // 250 is for text
     var xscale = d3.scale.linear()
       .domain([0, 90])
-      .range([400, this.width]);
+      .range([400, this.width - 10]);
 
     var svg = d3.select(".figure")
       .append('svg')
@@ -98,6 +97,22 @@ window.Pulsar.prototype = {
         return xscale(d.lengthOfTransfer / 60);
       });
 
+      // set up the axis
+      var axis = d3.svg.axis()
+        .scale(xscale)
+        .orient('bottom');
+
+      svg.append('g')
+        .attr('class', 'legend')
+        .attr('transform', 'translate(0 ' + (this.height - 45) + ')')
+        .call(axis);
+
+      // add the label
+      svg.append('g')
+        .attr('class', 'label')
+        .attr('transform', 'translate(' + (this.width / 2) + ' ' + (this.height - 4) + ')')
+        .append('text')
+        .text('Transfer length (minutes)')
 
   }
 };
