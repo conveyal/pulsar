@@ -8,16 +8,29 @@
 
     <link rel="stylesheet" href="stylesheets/main.css" />
 
-    <script type="text/javascript">
-      window.pinst = new Pulsar('baseline');
-      window.pinst.setRoute('62');
-    </script>
   </head>
   <body>
     <h1 id="title"></h1>
 
+      <label for="routeId">Route ID:</label>
+      <input type="text" id="routeId" />
+
+    <input type="button" value="Change direction" id="changeDir" />
+
     <div class="figure"></div>
 
     <!-- todo: time range input -->
+
+    <script type="text/javascript">
+    window.pinst = new Pulsar('baseline');
+
+    d3.select('#routeId').on('change', function (e) {
+      window.pinst.setRoute(d3.select('#routeId')[0][0].value);
+    });
+
+    d3.select('#changeDir').on('click', function (e) {
+      window.pinst.toggleDirection();
+    });
+    </script>
   </body>
 </html>

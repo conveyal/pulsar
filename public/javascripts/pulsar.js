@@ -21,6 +21,11 @@ window.Pulsar.prototype = {
     });
   },
 
+  toggleDirection: function () {
+    this.direction = this.direction !== 0 ? 0 : 1;
+    this.fetchData();
+  },
+
   redraw: function () {
     // set the title
     d3.select("#title").text("Transfers from " + this.data[0].fromRouteDirection.route.route_short_name + " " +
@@ -112,7 +117,6 @@ window.Pulsar.prototype = {
         .attr('class', 'label')
         .attr('transform', 'translate(' + (this.width / 2) + ' ' + (this.height - 4) + ')')
         .append('text')
-        .text('Transfer length (minutes)')
-
+        .text('Transfer length (minutes)');
   }
 };
