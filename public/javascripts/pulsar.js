@@ -66,7 +66,7 @@ window.Pulsar.prototype = {
     // set the title
     d3.select("#title").text("Transfers from " + this.data[0].fromRouteDirection.route.route_short_name + " " +
       this.data[0].fromRouteDirection.route.route_long_name +
-      " towards " + this.data[this.data.length - 1].fromStop.stop_name);
+      " to " +   this.data[0].fromRouteDirection.destination);
 
     // draw the new plot
     // figure the spacing

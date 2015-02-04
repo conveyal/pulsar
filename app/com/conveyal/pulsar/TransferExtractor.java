@@ -207,37 +207,69 @@ public class TransferExtractor {
      */
     public Stop[] stopsForRouteDirection(RouteDirection routeDirection) {
         Set<Stop> stops = new HashSet<Stop>();
+        ArrayList<Stop> stopsInOrder = new ArrayList<Stop>();
         
         Collection<Trip> trips = tripIndex.get(routeDirection);
         
-        // index the order of the stops
-        String[][] tripStopOrder = new String[trips.size()][];
-        
+        StopTime[][] allStopTimes = new StopTime[trips.size()][];
         
         // get all of the stops and put them in out of order; we will sort them momentarily
-        int i = 0;
+        int tidx = 0;
         for (Trip trip : trips) {
             // get all of the stop times
-            Collection<StopTime> stopTimes = stopTimesForTrip(trip.trip_id);                    
-            
-            int j = 0;
-            
-            String[] stopOrder = new String[stopTimes.size()];
-            
-            for (StopTime st : stopTimes) {
-                stops.add(feed.stops.get(st.stop_id));
-                // intern the strings so we can use equality when scanning and not page more memory
-                stopOrder[j++] = st.stop_id.intern();
-            }
-            
-            tripStopOrder[i++] = stopOrder;
+            Collection<StopTime> stopTimesCollection = stopTimesForTrip(trip.trip_id);
+            StopTime[] stopTimes = stopTimesCollection.toArray(new StopTime[stopTimesCollection.size()]);
+            allStopTimes[tidx++] = stopTimes;
         }
         
-        // sort the stops by which one appears appears first in the most trips
-        Stop[] ret = stops.toArray(new Stop[stops.size()]);
-        Arrays.sort(ret, new StopOrderComparator(tripStopOrder));
+        // sort the stop times arrays by length, so that the longest one largely defines the pattern
+        Arrays.sort(allStopTimes, new Comparator<Object[]> () {
+
+            @Override
+            public int compare(Object[] o1, Object[] o2) {
+                // this is deliberately backwards to get a greatest-first sort.
+                return o2.length - o1.length;
+            }
+        });
+            
+        for (StopTime[] stopTimes : allStopTimes) {
+            for (int i = 0; i < stopTimes.length; i++) {
+                Stop stop = feed.stops.get(stopTimes[i].stop_id);
+                if (stops.contains(stop))
+                    continue;
+                
+                // slot the stop in after the previous stop
+                if (i > 0) {
+                    Stop prev = feed.stops.get(stopTimes[i - 1].stop_id);
+                    if (stops.contains(prev)) {
+                        stopsInOrder.add(stopsInOrder.indexOf(prev) + 1, stop);
+                        stops.add(stop);
+                        continue;
+                    }
+                }
+                
+                // we didn't hit the continue, so the stop has not been added. Slot it in before the next stop
+                if (i < stopTimes.length - 1) {
+                    Stop next = feed.stops.get(stopTimes[i + 1].stop_id);
+                    if (stops.contains(next)) {
+                        stopsInOrder.add(stopsInOrder.indexOf(next), stop);
+                        stops.add(stop);
+                        continue;
+                    }
+                }
+                
+                // take a wild guess
+                if (i < stopTimes.length / 2)
+                    stopsInOrder.add(0, stop);
+                
+                else
+                    stopsInOrder.add(stop);
+                
+                stops.add(stop);
+            }
+        }
         
-        return ret;
+        return stopsInOrder.toArray(new Stop[stops.size()]);
     }
     
     private Collection<StopTime> stopTimesForTrip(String trip_id) {
@@ -499,69 +531,6 @@ public class TransferExtractor {
         double aboveProportion = offset % 1;
         
         return (int) Math.round(aboveProportion * above + (1 - aboveProportion) * below);
-    }
-
-
-    /**
-     * Shuffle the stops from many different trips together. We do this by putting stops that generally
-     * appear before other stops first.
-     * @author matthewc
-     *
-     */
-    private static class StopOrderComparator implements Comparator<Stop> {
-        private String[][] tripStopOrder;
-        
-        /**
-         * Create a new stop order comparator with the given stop sequences. Stop IDs should be interned. 
-         * @param tripStopOrder
-         */
-        public StopOrderComparator (String[][] tripStopOrder) {
-            this.tripStopOrder = tripStopOrder;
-        }
-        
-        public int compare(Stop s1, Stop s2) {
-            // intern so we can use ==
-            String id1 = s1.stop_id.intern();
-            String id2 = s2.stop_id.intern();
-            
-            if (id1 == id2)
-                return 0;
-            
-            int before = 0;
-            int after = 0;
-            
-            for (String[] trip : tripStopOrder) {
-                
-                int s1idx = -1;
-                int s2idx = -1;
-                
-                for (int i = 0; i < trip.length; i++) {
-                    if (trip[i] == id1)
-                        s1idx = i;
-                    
-                    else if (trip[i] == id2)
-                        s2idx = i;
-                    
-                    if (s1idx >= 0 && s2idx >= 0)
-                        // found both stops.
-                        break;
-                }
-                
-                if (s1idx >= 0 && s2idx >= 0) {
-                    if (s1idx < s2idx) {
-                        // s1 after s2
-                        before++;
-                    }
-                    else {
-                        // s2 after s1
-                        after++;
-                    }
-                }
-            }
-            
-            // before > after: s1 < s2
-            return after - before;
-        }
     }
     
     /**

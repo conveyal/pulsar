@@ -58,6 +58,9 @@ public class Application extends Controller {
         
         List<Transfer> ret = new ArrayList<Transfer>();
         
+        Stop[] fromStops = t.stopsForRouteDirection(rd);
+        String destName = fromStops[fromStops.length - 1].stop_name;
+        
         for (Transfer xfer : xfers) {
             xfer.transferTimes = t.transferTimes(xfer);
             if (xfer.transferTimes.length > 0)
@@ -65,6 +68,7 @@ public class Application extends Controller {
             
             Stop[] stops = t.stopsForRouteDirection(xfer.toRouteDirection);
             xfer.toRouteDirection.destination = stops[stops.length - 1].stop_name;
+            xfer.fromRouteDirection.destination = destName;
         }
         
         return ok(Json.toJson(ret));
