@@ -3,7 +3,9 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index()
+GET     /transfers/:file/:route/:direction controllers.Application.transfers(file:String, route:String, direction:Integer)
 
-# Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+# Map static resources from the /public folder to the / URL path
+GET     /*file               controllers.Assets.at(path="/public", file)
+GET 	/                    controllers.Assets.at(path="/public", file="index.html")
+

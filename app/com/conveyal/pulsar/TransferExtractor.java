@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -89,8 +90,8 @@ public class TransferExtractor {
         for (Transfer xfer : transfers) {
             if (++i % 50 == 0)
                 LOG.info("processed " + (i - 1) + " transfers");
-            
-            t.addDistributionToTransfer(xfer, 6 * 60 * 60, 9 * 60 * 60);
+
+            t.addDistributionToTransfer(xfer, 7 * 60 * 60, 9 * 60 * 60);
             
             if (xfer.median == Integer.MIN_VALUE)
                 // no transfers to this route.
@@ -267,6 +268,7 @@ public class TransferExtractor {
         
         Envelope env = new Envelope(new Coordinate(lon, lat));
         env.expandBy(thresholdDegLon, thresholdDegLat);
+        @SuppressWarnings("unchecked")
         Collection<Stop> potentialStops = stopsIndex.query(env);
         
         return Collections2.filter(potentialStops, new Predicate<Stop> () {
@@ -364,7 +366,7 @@ public class TransferExtractor {
      * which is fine for the the TriMet use case as we use this in conjunction with calendar_extract. but in general this is not
      * desirable.
      */
-    public int[] transferTimes(Transfer t, int fromTime, int toTime) {
+    public TransferTime[] transferTimes(Transfer t) {
         // we can't just use an array, as not every trip stops at every stop
         // note
         TIntList arrivalTimes = new TIntArrayList(); 
@@ -385,7 +387,7 @@ public class TransferExtractor {
             
             while (stopTimes.hasNext()) {
                 StopTime st = stopTimes.next();
-                if (st.stop_id.equals(t.fromStop.stop_id) && st.arrival_time >= fromTime && st.arrival_time <= toTime) {
+                if (st.stop_id.equals(t.fromStop.stop_id)) {
                     arrivalTimes.add(st.arrival_time);
                 }
             }
@@ -396,8 +398,7 @@ public class TransferExtractor {
             while (stopTimes.hasNext()) {
                 StopTime st = stopTimes.next();
                 // doesn't make sense to transfer to the last stop on a trip, so if that's the case skip this one.
-                if (st.stop_id.equals(t.toStop.stop_id) && stopTimes.hasNext() &&
-                        st.departure_time >= fromTime && st.departure_time <= toTime) {
+                if (st.stop_id.equals(t.toStop.stop_id) && stopTimes.hasNext()) {
                     departureTimes.add(st.departure_time);
                 }
             }
@@ -406,7 +407,7 @@ public class TransferExtractor {
         arrivalTimes.sort();
         departureTimes.sort();
         
-        TIntList transferTimes = new TIntArrayList();
+        List<TransferTime> transferTimes = new ArrayList<TransferTime>();
         
         TIntIterator arrivalsIterator = arrivalTimes.iterator();
         TIntIterator departuresIterator = departureTimes.iterator();
@@ -414,7 +415,7 @@ public class TransferExtractor {
         if (!arrivalsIterator.hasNext() || !departuresIterator.hasNext())
             // no transfer
             // most likely we are either trying to transfer from the very start of a trip or the very end
-            return new int[0];
+            return new TransferTime[0];
         
         // this is outside the loop because the same departure can be the target for multiple arrivals.
         int departure = departuresIterator.next();
@@ -444,11 +445,11 @@ public class TransferExtractor {
             int transferTime = departure - arrival;
             
             if (transferTime <= maxTransferTime)
-                transferTimes.add(transferTime);
+                transferTimes.add(new TransferTime(transferTime, arrival));
                 
         }
         
-        return transferTimes.toArray();
+        return transferTimes.toArray(new TransferTime[transferTimes.size()]);
     }
     
     /**
@@ -457,16 +458,16 @@ public class TransferExtractor {
      * @param toTome the end of the time window to consider, in seconds
      */
     public void addDistributionToTransfer(Transfer t, int fromTime, int toTime) {
-        int[] times = transferTimes(t, fromTime, toTime);
+        TransferTime[] times = transferTimes(t);
         
-        Arrays.sort(times);
+        Arrays.sort(times, new TransferTime.LengthComparator());
         
         if (times.length == 0)
             return;
         
         // min and max are easy
-        t.min = times[0];
-        t.max = times[times.length - 1];
+        t.min = times[0].lengthOfTransfer;
+        t.max = times[times.length - 1].lengthOfTransfer;
         
         // get the percentiles
         t.pct25 = getPercentile(25, times);
@@ -478,21 +479,21 @@ public class TransferExtractor {
     
     
     /** Get a given percentile from a sorted list of times */
-    private int getPercentile(int percent, int[] times) {
+    private int getPercentile(int percent, TransferTime[] times) {
         if (times.length == 0)
             // by construction
             return Integer.MAX_VALUE;
         
         if (times.length == 1)
-            return times[0];
+            return times[0].lengthOfTransfer;
         
         double offset = (((double) percent) / 100d) * ((double) times.length - 1);
         
         // we compute the percentile as a weighted average of the times above and below the offset
         // if we hit a number exactly, this will still work as we'll be taking the weighted average of the same
         // number
-        int above = times[(int) Math.ceil(offset)];
-        int below = times[(int) Math.floor(offset)];
+        int above = times[(int) Math.ceil(offset)].lengthOfTransfer;
+        int below = times[(int) Math.floor(offset)].lengthOfTransfer;
         
         double aboveProportion = offset % 1;
         
@@ -606,7 +607,7 @@ public class TransferExtractor {
     
     /**
      * Represents a transfer from a route direction to another route direction.
-     * @author matthewc
+     * @author mattwigway
      *
      */
     public static class Transfer {
@@ -635,6 +636,9 @@ public class TransferExtractor {
         /** number of transfers */
         public int n;
         
+        /** actual transfer times */
+        public TransferTime[] transferTimes; 
+        
         public Transfer(Stop fromStop, Stop toStop, RouteDirection fromRouteDirection, RouteDirection toRouteDirection) {
             this.fromStop = fromStop;
             this.toStop = toStop;
@@ -644,6 +648,36 @@ public class TransferExtractor {
             
             // make it clear that these have not been initialized.
             min = pct25 = median = pct75 = max = n = Integer.MIN_VALUE;
+        }
+    }
+    
+    /** Represents a single instance of a transfer, with the length and the time of day */
+    public static class TransferTime {
+        /** Length of the transfer, seconds */
+        public int lengthOfTransfer;
+        
+        /** time of day, seconds since midnight */
+        public int timeOfDay;
+        
+        public TransferTime (int lengthOfTransfer, int timeOfDay) {
+            this.lengthOfTransfer = lengthOfTransfer;
+            this.timeOfDay = timeOfDay;
+        }
+        
+        /** compare based on the length of the transfer */
+        public static class LengthComparator implements Comparator<TransferTime> {
+            @Override
+            public int compare(TransferTime o1, TransferTime o2) {
+                return o1.lengthOfTransfer - o2.lengthOfTransfer;
+            }
+        }
+        
+        /** compare based on the time of day */
+        public static class TimeOfDayComparator implements Comparator<TransferTime> {
+            @Override
+            public int compare(TransferTime o1, TransferTime o2) {
+                return o1.timeOfDay - o2.timeOfDay;
+            } 
         }
     }
 }
