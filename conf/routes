@@ -4,6 +4,7 @@
 
 # Home page
 GET     /transfers/:file/:route/:direction controllers.Application.transfers(file:String, route:String, direction:Integer)
+GET     /routes/:file                      controllers.Application.routes(file:String)
 
 # Map static resources from the /public folder to the / URL path
 GET     /*file               controllers.Assets.at(path="/public", file)

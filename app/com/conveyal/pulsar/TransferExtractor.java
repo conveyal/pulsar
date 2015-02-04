@@ -421,12 +421,13 @@ public class TransferExtractor {
         int departure = departuresIterator.next();
         
         // advance the arrivals iterator until we are looking at the last trip before the first departure
+        // so we don't consider long "transfers" that are before the second route enters service
         TIntIterator otherArrivalsIterator = arrivalTimes.iterator();
         
         // otherArrivalsIterator is now one ahead of arrivals iterator; that is, it is a peeking iterator
         otherArrivalsIterator.next();
         
-        while (otherArrivalsIterator.next() < departure)
+        while (otherArrivalsIterator.hasNext() && otherArrivalsIterator.next() < departure)
             arrivalsIterator.next();
         
         ARRIVALS: while (arrivalsIterator.hasNext()) {

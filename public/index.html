@@ -13,7 +13,8 @@
     <h1 id="title"></h1>
 
       <label for="routeId">Route ID:</label>
-      <input type="text" id="routeId" />
+      <select id="routeId">
+      </select>
 
     <input type="button" value="Change direction" id="changeDir" />
 
@@ -22,15 +23,33 @@
     <!-- todo: time range input -->
 
     <script type="text/javascript">
-    window.pinst = new Pulsar('baseline');
+      window.pinst = new Pulsar('baseline');
 
-    d3.select('#routeId').on('change', function (e) {
-      window.pinst.setRoute(d3.select('#routeId')[0][0].value);
-    });
+      d3.select('#routeId').on('change', function (e) {
+        window.pinst.setRoute(d3.select('#routeId')[0][0].value);
+      });
 
-    d3.select('#changeDir').on('click', function (e) {
-      window.pinst.toggleDirection();
-    });
+      d3.select('#changeDir').on('click', function (e) {
+        window.pinst.toggleDirection();
+      });
+
+      d3.json('routes/baseline', function (err, data) {
+        // populate the select
+        d3.select('#routeId')
+        .selectAll('option')
+        .data(data)
+        .enter()
+        .append('option')
+        .attr('value', function (d) {
+          return d.route_id;
+        })
+        .text(function (d) {
+          if (!d.route_short_name)
+            return d.route_long_name;
+
+          return d.route_short_name + " " + d.route_long_name;
+        });
+      });
     </script>
   </body>
 </html>

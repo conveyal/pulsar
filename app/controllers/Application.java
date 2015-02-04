@@ -66,4 +66,14 @@ public class Application extends Controller {
         
         return ok(Json.toJson(ret));
     }
+    
+    /** get all the routes for a given file */
+    public static Result routes (String file) {
+        if (!transferExtractorPool.containsKey(file))
+            return notFound("No such GTFS feed");
+        
+        TransferExtractor t = transferExtractorPool.get(file);
+        
+        return ok(Json.toJson(t.feed.routes.values()));
+    }
 }
