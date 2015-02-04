@@ -62,6 +62,9 @@ public class Application extends Controller {
             xfer.transferTimes = t.transferTimes(xfer);
             if (xfer.transferTimes.length > 0)
                 ret.add(xfer);
+            
+            Stop[] stops = t.stopsForRouteDirection(xfer.toRouteDirection);
+            xfer.toRouteDirection.destination = stops[stops.length - 1].stop_name;
         }
         
         return ok(Json.toJson(ret));

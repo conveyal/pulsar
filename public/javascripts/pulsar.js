@@ -2,7 +2,7 @@
 window.Pulsar = function (file) {
   this.file = file;
   this.height = 800;
-  this.width = 1600;
+  this.width = 1200;
   this.range = [0, 24];
 };
 
@@ -32,16 +32,41 @@ window.Pulsar.prototype = {
     this.redraw();
   },
 
+  formatTime: function (time) {
+    var hrs = Math.floor(time);
+    var mins = Math.round((time - hrs) * 60);
+
+    mins = mins < 10 ? '0' + mins : mins;
+
+    var ap = hrs >= 12 ? ' pm' : ' am';
+    if (hrs == 24) ap = ' am';
+
+    hrs = hrs % 12;
+
+    if (hrs === 0) hrs = 12;
+
+    return hrs + ":" + mins + ap;
+  },
+
   redraw: function () {
     var instance = this;
+
+    // clear the plot
+    d3.select("svg").remove();
+
+    if (!this.data)
+      // still starting up
+      return;
+
+    if (this.data.length === 0) {
+      d3.select("#title").text('No transfers from this route and direction');
+      return;
+    }
 
     // set the title
     d3.select("#title").text("Transfers from " + this.data[0].fromRouteDirection.route.route_short_name + " " +
       this.data[0].fromRouteDirection.route.route_long_name +
       " towards " + this.data[this.data.length - 1].fromStop.stop_name);
-
-    // clear the plot
-    d3.select("svg").remove();
 
     // draw the new plot
     // figure the spacing
@@ -79,7 +104,11 @@ window.Pulsar.prototype = {
         var name = d.toRouteDirection.route.route_short_name != null ?
         d.toRouteDirection.route.route_short_name :
         d.toRouteDirection.route.route_long_name;
-        return name + " at " + d.fromStop.stop_name;
+        return name + " to " + d.toRouteDirection.destination;
+      })
+      .append('title')
+      .text(function (d) {
+        return "at " + d.fromStop.stop_name;
       });
 
     var offset = -transfers[0][0].getBBox().height / 3;
@@ -116,6 +145,10 @@ window.Pulsar.prototype = {
       .attr('cy', offset)
       .attr('cx', function (d) {
         return xscale(d.lengthOfTransfer / 60);
+      })
+      .append('title')
+      .text(function (d) {
+        return Math.round(d.lengthOfTransfer / 60) + ' minute transfer at ' + instance.formatTime(d.timeOfDay / 3600);
       });
 
       // set up the axis

@@ -587,6 +587,8 @@ public class TransferExtractor {
         public Route route;
         public Direction direction;
         
+        public String destination;
+        
         public RouteDirection(Route route, Direction direction) {
             this.route = route;
             this.direction = direction;
@@ -616,6 +618,7 @@ public class TransferExtractor {
         public Stop toStop;
         public RouteDirection fromRouteDirection;
         public RouteDirection toRouteDirection;
+        
         /** meters, as the crow flies */
         public double distance;
         

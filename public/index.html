@@ -75,30 +75,16 @@
           return d.route_short_name + " " + d.route_long_name;
         });
 
-        var formatTime = function (time) {
-          var hrs = Math.floor(time);
-          var mins = (time - hrs) * 60;
-
-          mins = mins < 10 ? '0' +mins : mins;
-
-          var ap = hrs >= 12 ? ' pm' : ' am';
-          if (hrs == 24) ap = ' am';
-
-          hrs = hrs % 12;
-
-          if (hrs === 0) hrs = 12;
-
-          return hrs + ":" + mins + ap;
-        };
+        window.pinst.setRoute(d3.select('#routeId')[0][0].value);
 
         $('#range').slider({
           formatter: function (val) {
-            return formatTime(val[0]) + " - " + formatTime(val[1]);
+            return window.pinst.formatTime(val[0]) + " - " + window.pinst.formatTime(val[1]);
           }
         })
         .change(function () {
           var array = $(this).slider('getValue');
-          d3.select('#rangeReadout').text(formatTime(array[0]) + ' - ' + formatTime(array[1]));
+          d3.select('#rangeReadout').text(window.pinst.formatTime(array[0]) + ' - ' + window.pinst.formatTime(array[1]));
           window.pinst.setRange(array);
         })
         .change();
