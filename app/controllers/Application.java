@@ -54,7 +54,7 @@ public class Application extends Controller {
         RouteDirection rd = new RouteDirection(r, Direction.fromGtfs(direction));
 
         // 100 meter threshold for transfers
-        Transfer[] xfers = t.getTransfers(rd, 100);
+        Transfer[] xfers = t.getTransfers(rd, 400);
         
         List<Transfer> ret = new ArrayList<Transfer>();
         

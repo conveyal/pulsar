@@ -48,6 +48,14 @@ window.Pulsar.prototype = {
     return hrs + ":" + mins + ap;
   },
 
+  /** get a name for a routedirection */
+  getname: function (rd) {
+    var name = rd.route.route_short_name !== null ?
+    rd.route.route_short_name :
+    rd.route.route_long_name;
+    return name + " to " + rd.destination;
+  },
+
   redraw: function () {
     var instance = this;
 
@@ -64,9 +72,7 @@ window.Pulsar.prototype = {
     }
 
     // set the title
-    d3.select("#title").text("Transfers from " + this.data[0].fromRouteDirection.route.route_short_name + " " +
-      this.data[0].fromRouteDirection.route.route_long_name +
-      " to " +   this.data[0].fromRouteDirection.destination);
+    d3.select("#title").text("Transfers from " + this.getname(this.data[0].fromRouteDirection));
 
     // draw the new plot
     // figure the spacing
@@ -101,10 +107,7 @@ window.Pulsar.prototype = {
     transfers
       .append('text')
       .text(function (d) {
-        var name = d.toRouteDirection.route.route_short_name != null ?
-        d.toRouteDirection.route.route_short_name :
-        d.toRouteDirection.route.route_long_name;
-        return name + " to " + d.toRouteDirection.destination;
+        return instance.getname(d.toRouteDirection);
       })
       .append('title')
       .text(function (d) {

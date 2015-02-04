@@ -22,6 +22,9 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.geotools.referencing.GeodeticCalculator;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
 import org.mapdb.Fun;
 import org.mapdb.Fun.Tuple2;
 
@@ -133,7 +136,7 @@ public class TransferExtractor {
         LOG.info("Spatially indexing stops");
         indexStops();
         LOG.info("Indexing trips");
-        indexTrips();
+        indexTrips(new DateTime(2015, 2, 4, 0, 0));
         LOG.info("Indexing routes");
         indexRouteStops();
         LOG.info("Done indexing");
@@ -155,10 +158,13 @@ public class TransferExtractor {
     /**
      * Index trips by route ID and direction, so that we can find them easily. 
      */
-    private void indexTrips () {
+    private void indexTrips (DateTime date) {
         tripIndex = HashMultimap.create();
         
         for (Trip trip : feed.trips.values()) {
+            if (!trip.service.activeOn(date))
+                continue;
+            
             // TODO: don't assume GTFS has a direction ID
             Direction dir = Direction.fromGtfs(trip.direction_id); 
             
@@ -329,9 +335,12 @@ public class TransferExtractor {
             // TODO: don't hardwire threshold to 100m
             Map<RouteDirection, Transfer> bestTransfersForThisStop = new HashMap<RouteDirection, Transfer>();
             
-            for (Stop toStop : stopsNear(fromStop.stop_lat, fromStop.stop_lon, 100)) {
+            for (Stop toStop : stopsNear(fromStop.stop_lat, fromStop.stop_lon, threshold)) {
                 // find all possible transfers
                 for (RouteDirection rd : routesByStop.get(toStop)) {
+                    // this can happen when we cross a route that does not have service on the day specified
+                    if (!tripIndex.containsKey(rd))
+                        continue;                    
                     
                     // don't transfer to the same route, in this direction or the other.
                     if (rd.route.equals(dir.route))

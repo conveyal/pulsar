@@ -77,6 +77,9 @@
           if (!d.route_short_name)
             return d.route_long_name;
 
+          if (!d.route_long_name)
+            return d.route_short_name;
+
           return d.route_short_name + " " + d.route_long_name;
         });
 
