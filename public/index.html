@@ -39,7 +39,8 @@
 
       &nbsp;&nbsp;&nbsp;
 
-      <input id="range" type="text" class="span2" value="" data-slider-min="0" data-slider-max="24" data-slider-step="0.25" data-slider-value="[0,4]"/>
+      <input id="range" type="text" class="span2" value="" data-slider-min="0" data-slider-max="24" data-slider-step="0.25" data-slider-value="[7,9]"/>
+      <span id="rangeReadout"></span>
     </div>
 
     <div class="figure"></div>
@@ -81,6 +82,8 @@
           mins = mins < 10 ? '0' +mins : mins;
 
           var ap = hrs >= 12 ? ' pm' : ' am';
+          if (hrs == 24) ap = ' am';
+
           hrs = hrs % 12;
 
           if (hrs === 0) hrs = 12;
@@ -95,8 +98,10 @@
         })
         .change(function () {
           var array = $(this).slider('getValue');
+          d3.select('#rangeReadout').text(formatTime(array[0]) + ' - ' + formatTime(array[1]));
           window.pinst.setRange(array);
         })
+        .change();
       });
     </script>
   </body>
