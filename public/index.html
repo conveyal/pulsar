@@ -4,6 +4,21 @@
     <title>Transfer Performance by Route</title>
 
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+
+    <script src="lib/bootstrap-slider.min.js"></script>
+    <link rel="stylesheet" href="lib/bootstrap-slider.min.css"></script>
+
     <script src="javascripts/pulsar.js"></script>
 
     <link rel="stylesheet" href="stylesheets/main.css" />
@@ -12,11 +27,20 @@
   <body>
     <h1 id="title"></h1>
 
-      <label for="routeId">Route ID:</label>
-      <select id="routeId">
-      </select>
+    <div class="form-inline">
+      <div class="form-group">
+        <label for="routeId">Route</label>
+        <select id="routeId" class="form-control"></select>
+      </div>
 
-    <input type="button" value="Change direction" id="changeDir" />
+      <button class="form-control btn btn-primary" id="changeDir">
+        <span class="glyphicon glyphicon-resize-horizontal"></span>&nbsp;&nbsp;Change direction
+      </button>
+
+      &nbsp;&nbsp;&nbsp;
+
+      <input id="range" type="text" class="span2" value="" data-slider-min="0" data-slider-max="24" data-slider-step="0.25" data-slider-value="[0,4]"/>
+    </div>
 
     <div class="figure"></div>
 
@@ -49,6 +73,30 @@
 
           return d.route_short_name + " " + d.route_long_name;
         });
+
+        var formatTime = function (time) {
+          var hrs = Math.floor(time);
+          var mins = (time - hrs) * 60;
+
+          mins = mins < 10 ? '0' +mins : mins;
+
+          var ap = hrs >= 12 ? ' pm' : ' am';
+          hrs = hrs % 12;
+
+          if (hrs === 0) hrs = 12;
+
+          return hrs + ":" + mins + ap;
+        };
+
+        $('#range').slider({
+          formatter: function (val) {
+            return formatTime(val[0]) + " - " + formatTime(val[1]);
+          }
+        })
+        .change(function () {
+          var array = $(this).slider('getValue');
+          window.pinst.setRange(array);
+        })
       });
     </script>
   </body>

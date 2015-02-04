@@ -3,6 +3,7 @@ window.Pulsar = function (file) {
   this.file = file;
   this.height = 800;
   this.width = 1600;
+  this.range = [0, 24];
 };
 
 window.Pulsar.prototype = {
@@ -26,7 +27,14 @@ window.Pulsar.prototype = {
     this.fetchData();
   },
 
+  setRange: function (range) {
+    this.range = range;
+    this.redraw();
+  },
+
   redraw: function () {
+    var instance = this;
+
     // set the title
     d3.select("#title").text("Transfers from " + this.data[0].fromRouteDirection.route.route_short_name + " " +
       this.data[0].fromRouteDirection.route.route_long_name +
@@ -88,7 +96,15 @@ window.Pulsar.prototype = {
     var transferMarkers = transfers.selectAll('circle')
       .data(function (d, i) {
         // TODO: filter here
-        return d.transferTimes;
+        var filtered = [];
+
+        d.transferTimes.forEach(function (tt) {
+          if (tt.timeOfDay >= instance.range[0] * 3600 && tt.timeOfDay <= instance.range[1] * 3600) {
+            filtered.push(tt);
+          }
+        });
+
+        return filtered;
       });
 
     transferMarkers.enter()
