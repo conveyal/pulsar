@@ -1,4 +1,4 @@
-# pulsar2: evaluate connection times by route
+# pulsar: evaluate connection times by route
 
 <img src="splash.png" alt="visualization of connection times from Route M4, Washington, DC" />
 
@@ -15,7 +15,7 @@ type `./activator run -mem 2048`, adjusting the memory allocation as needed, to 
 and select a route and a direction to visualize transfer times. You can filter the transfer times by time of day using
 the range slider. Each dot represents a transfer.
 
-## What
+## Filtering
 
 The connections are filtered using the following rules:
 
